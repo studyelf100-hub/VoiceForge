@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VoiceForge — Unlimited Text to Speech</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #1a1a24;
+    --border: #2a2a3a;
+    --accent: #e8ff47;
+    --accent2: #47ffe8;
+    --text: #e8e8f0;
+    --muted: #6a6a8a;
+    --error: #ff4747;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: 
+      radial-gradient(ellipse 60% 40% at 20% 20%, rgba(232,255,71,0.04) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 50% at 80% 80%, rgba(71,255,232,0.04) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  /* Header */
+  header {
+    padding: 48px 0 40px;
+    display: flex;
+    align-items: flex-end;
+    gap: 20px;
+  }
+
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(48px, 8vw, 80px);
+    letter-spacing: 2px;
+    line-height: 1;
+    color: var(--text);
+  }
+
+  .logo span {
+    color: var(--accent);
+  }
+
+  .tagline {
+    font-size: 13px;
+    color: var(--muted);
+    font-weight: 300;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  /* Main card */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+
+  .card-header {
+    padding: 20px 24px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .card-label {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .char-count {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .char-count.has-text {
+    color: var(--accent);
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 260px;
+    padding: 16px 24px 24px;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    font-weight: 300;
+    line-height: 1.7;
+    resize: vertical;
+  }
+
+  textarea::placeholder {
+    color: var(--muted);
+    font-style: italic;
+  }
+
+  /* Controls row */
+  .controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .select-wrap {
+    position: relative;
+  }
+
+  .select-label {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  select {
+    width: 100%;
+    padding: 14px 40px 14px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    appearance: none;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    outline: none;
+  }
+
+  select:focus {
+    border-color: var(--accent);
+  }
+
+  .select-arrow {
+    position: absolute;
+    right: 14px;
+    bottom: 17px;
+    pointer-events: none;
+    color: var(--muted);
+    font-size: 10px;
+  }
+
+  /* Sliders */
+  .sliders {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .slider-group {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+
+  .slider-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .slider-name {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .slider-val {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+  }
+
+  input[type="range"] {
+    width: 100%;
+    height: 3px;
+    -webkit-appearance: none;
+    background: var(--border);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+
+  input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.3);
+  }
+
+  /* Action bar */
+  .action-bar {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .btn-speak {
+    flex: 1;
+    padding: 18px 32px;
+    background: var(--accent);
+    color: #0a0a0f;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-speak:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(232,255,71,0.25);
+  }
+
+  .btn-speak:active {
+    transform: translateY(0);
+  }
+
+  .btn-speak:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .btn-speak.speaking {
+    background: var(--accent2);
+  }
+
+  .btn-icon {
+    width: 22px;
+    height: 22px;
+  }
+
+  .btn-secondary {
+    padding: 18px 20px;
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .btn-secondary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* Progress bar */
+  .progress-wrap {
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-top: 16px;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .progress-wrap.visible {
+    opacity: 1;
+  }
+
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 2px;
+    width: 0%;
+    transition: width 0.3s;
+  }
+
+  /* Status */
+  .status {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 10px;
+    min-height: 18px;
+    font-family: 'DM Mono', monospace;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .status.speaking {
+    color: var(--accent);
+  }
+
+  .status.error {
+    color: var(--error);
+  }
+
+  /* Waveform visualizer */
+  .visualizer {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    height: 18px;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .visualizer.active {
+    opacity: 1;
+  }
+
+  .wave-bar {
+    width: 3px;
+    background: var(--accent);
+    border-radius: 2px;
+    animation: wave 0.8s ease-in-out infinite;
+  }
+
+  .wave-bar:nth-child(1) { animation-delay: 0s; height: 6px; }
+  .wave-bar:nth-child(2) { animation-delay: 0.1s; height: 10px; }
+  .wave-bar:nth-child(3) { animation-delay: 0.2s; height: 14px; }
+  .wave-bar:nth-child(4) { animation-delay: 0.15s; height: 10px; }
+  .wave-bar:nth-child(5) { animation-delay: 0.05s; height: 6px; }
+
+  @keyframes wave {
+    0%, 100% { transform: scaleY(1); }
+    50% { transform: scaleY(0.3); }
+  }
+
+  /* Voice grid */
+  .voice-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 8px;
+    margin-top: 12px;
+    max-height: 200px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+
+  .voice-grid::-webkit-scrollbar {
+    width: 4px;
+  }
+  .voice-grid::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .voice-grid::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 2px;
+  }
+
+  .voice-chip {
+    padding: 8px 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-size: 12px;
+    font-weight: 400;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .voice-chip:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .voice-chip.selected {
+    background: rgba(232,255,71,0.1);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* Section divider */
+  .section {
+    margin-bottom: 16px;
+  }
+
+  .section-head {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .section-head::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* No voices message */
+  .no-voices {
+    color: var(--muted);
+    font-size: 13px;
+    font-style: italic;
+    padding: 20px 0;
+    text-align: center;
+  }
+
+  /* Footer */
+  footer {
+    padding: 40px 0 32px;
+    color: var(--muted);
+    font-size: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--border);
+    margin-top: 40px;
+  }
+
+  .footer-note {
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* Animations */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .card, .controls, .sliders, .action-bar {
+    animation: fadeIn 0.4s ease both;
+  }
+
+  .controls { animation-delay: 0.05s; }
+  .sliders { animation-delay: 0.1s; }
+  .action-bar { animation-delay: 0.15s; }
+
+  @media (max-width: 600px) {
+    .controls { grid-template-columns: 1fr; }
+    .sliders { grid-template-columns: 1fr 1fr; }
+    header { flex-direction: column; align-items: flex-start; gap: 8px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="logo">Voice<span>Forge</span></div>
+    <div class="tagline">Unlimited Text-to-Speech · No word limits · Every language</div>
+  </header>
+
+  <!-- Text Input -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-label">Your Text</span>
+      <span class="char-count" id="charCount">0 characters</span>
+    </div>
+    <textarea id="textInput" placeholder="Paste any amount of text here — articles, books, scripts, anything — and hear it spoken aloud in your chosen language and accent..."></textarea>
+  </div>
+
+  <!-- Language + Voice Selection -->
+  <div class="controls">
+    <div class="select-wrap">
+      <label class="select-label" for="langSelect">Language / Region</label>
+      <select id="langSelect">
+        <option value="">— Loading voices… —</option>
+      </select>
+      <span class="select-arrow">▼</span>
+    </div>
+    <div class="select-wrap">
+      <label class="select-label" for="voiceSelect">Voice</label>
+      <select id="voiceSelect">
+        <option value="">— Choose language first —</option>
+      </select>
+      <span class="select-arrow">▼</span>
+    </div>
+  </div>
+
+  <!-- Voice chips (quick pick) -->
+  <div class="section" id="voiceChipsSection" style="display:none">
+    <div class="section-head">Quick Pick</div>
+    <div class="voice-grid" id="voiceChips"></div>
+  </div>
+
+  <!-- Sliders -->
+  <div class="sliders">
+    <div class="slider-group">
+      <div class="slider-header">
+        <span class="slider-name">Rate</span>
+        <span class="slider-val" id="rateVal">1.0×</span>
+      </div>
+      <input type="range" id="rateSlider" min="0.1" max="3" step="0.05" value="1">
+    </div>
+    <div class="slider-group">
+      <div class="slider-header">
+        <span class="slider-name">Pitch</span>
+        <span class="slider-val" id="pitchVal">1.0</span>
+      </div>
+      <input type="range" id="pitchSlider" min="0" max="2" step="0.05" value="1">
+    </div>
+    <div class="slider-group">
+      <div class="slider-header">
+        <span class="slider-name">Volume</span>
+        <span class="slider-val" id="volVal">100%</span>
+      </div>
+      <input type="range" id="volSlider" min="0" max="1" step="0.01" value="1">
+    </div>
+  </div>
+
+  <!-- Action Bar -->
+  <div class="action-bar">
+    <button class="btn-speak" id="speakBtn" onclick="toggleSpeak()">
+      <svg class="btn-icon" viewBox="0 0 24 24" fill="none" id="speakIcon">
+        <polygon points="5,3 19,12 5,21" fill="currentColor"/>
+      </svg>
+      <span id="speakLabel">SPEAK</span>
+    </button>
+    <button class="btn-secondary" id="pauseBtn" onclick="togglePause()" disabled>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+        <rect x="6" y="4" width="4" height="16" fill="currentColor"/>
+        <rect x="14" y="4" width="4" height="16" fill="currentColor"/>
+      </svg>
+      Pause
+    </button>
+    <button class="btn-secondary" onclick="stopSpeech()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+        <rect x="4" y="4" width="16" height="16" rx="2" fill="currentColor"/>
+      </svg>
+      Stop
+    </button>
+  </div>
+
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+
+  <div class="status" id="status">
+    <div class="visualizer" id="visualizer">
+      <div class="wave-bar"></div>
+      <div class="wave-bar"></div>
+      <div class="wave-bar"></div>
+      <div class="wave-bar"></div>
+      <div class="wave-bar"></div>
+    </div>
+    <span id="statusText">Ready to speak</span>
+  </div>
+
+  <footer>
+    <span>Powered by Web Speech API · Works in Chrome, Edge & Safari</span>
+    <span class="footer-note">No limits. No sign-up.</span>
+  </footer>
+</div>
+
+<script>
+  // --- State ---
+  let voices = [];
+  let allVoices = {};
+  let isSpeaking = false;
+  let isPaused = false;
+  let chunks = [];
+  let chunkIndex = 0;
+  const CHUNK_SIZE = 180; // words per chunk for long texts
+
+  // --- UI refs ---
+  const textInput = document.getElementById('textInput');
+  const langSelect = document.getElementById('langSelect');
+  const voiceSelect = document.getElementById('voiceSelect');
+  const speakBtn = document.getElementById('speakBtn');
+  const speakLabel = document.getElementById('speakLabel');
+  const speakIcon = document.getElementById('speakIcon');
+  const pauseBtn = document.getElementById('pauseBtn');
+  const statusText = document.getElementById('statusText');
+  const statusEl = document.getElementById('status');
+  const progressWrap = document.getElementById('progressWrap');
+  const progressBar = document.getElementById('progressBar');
+  const visualizer = document.getElementById('visualizer');
+  const charCount = document.getElementById('charCount');
+  const rateSlider = document.getElementById('rateSlider');
+  const pitchSlider = document.getElementById('pitchSlider');
+  const volSlider = document.getElementById('volSlider');
+
+  // --- Char counter ---
+  textInput.addEventListener('input', () => {
+    const len = textInput.value.length;
+    charCount.textContent = len.toLocaleString() + ' character' + (len !== 1 ? 's' : '');
+    charCount.classList.toggle('has-text', len > 0);
+  });
+
+  // --- Slider displays ---
+  rateSlider.addEventListener('input', () => {
+    document.getElementById('rateVal').textContent = parseFloat(rateSlider.value).toFixed(2) + '×';
+  });
+  pitchSlider.addEventListener('input', () => {
+    document.getElementById('pitchVal').textContent = parseFloat(pitchSlider.value).toFixed(2);
+  });
+  volSlider.addEventListener('input', () => {
+    document.getElementById('volVal').textContent = Math.round(volSlider.value * 100) + '%';
+  });
+
+  // --- Load Voices ---
+  function loadVoices() {
+    voices = speechSynthesis.getVoices();
+    if (!voices.length) return;
+
+    // Group by language
+    allVoices = {};
+    voices.forEach(v => {
+      const lang = v.lang;
+      if (!allVoices[lang]) allVoices[lang] = [];
+      allVoices[lang].push(v);
+    });
+
+    // Build lang display names
+    const langNames = {};
+    Object.keys(allVoices).forEach(lang => {
+      try {
+        const display = new Intl.DisplayNames(['en'], { type: 'language' });
+        const region = lang.split('-')[1];
+        let name = display.of(lang.split('-')[0]) || lang;
+        if (region) {
+          const regionDisplay = new Intl.DisplayNames(['en'], { type: 'region' });
+          name += ` (${regionDisplay.of(region) || region})`;
+        }
+        langNames[lang] = name;
+      } catch (e) {
+        langNames[lang] = lang;
+      }
+    });
+
+    // Sort langs
+    const sorted = Object.keys(allVoices).sort((a, b) => (langNames[a] || a).localeCompare(langNames[b] || b));
+
+    langSelect.innerHTML = '<option value="">— Choose a language —</option>';
+    sorted.forEach(lang => {
+      const opt = document.createElement('option');
+      opt.value = lang;
+      opt.textContent = `${langNames[lang]} [${allVoices[lang].length} voice${allVoices[lang].length>1?'s':''}]`;
+      langSelect.appendChild(opt);
+    });
+
+    // Default: browser lang or en-US
+    const preferred = navigator.language;
+    if (allVoices[preferred]) langSelect.value = preferred;
+    else {
+      const fallback = sorted.find(l => l.startsWith('en-')) || sorted[0];
+      if (fallback) langSelect.value = fallback;
+    }
+    onLangChange();
+  }
+
+  function onLangChange() {
+    const lang = langSelect.value;
+    voiceSelect.innerHTML = '';
+    const langVoices = allVoices[lang] || [];
+
+    if (!langVoices.length) {
+      voiceSelect.innerHTML = '<option value="">— No voices —</option>';
+      document.getElementById('voiceChipsSection').style.display = 'none';
+      return;
+    }
+
+    langVoices.forEach((v, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = v.name + (v.localService ? ' ✦' : '');
+      voiceSelect.appendChild(opt);
+    });
+
+    // Chips
+    const chipsSection = document.getElementById('voiceChipsSection');
+    const chipsContainer = document.getElementById('voiceChips');
+    chipsContainer.innerHTML = '';
+    if (langVoices.length > 1) {
+      chipsSection.style.display = '';
+      langVoices.forEach((v, i) => {
+        const chip = document.createElement('div');
+        chip.className = 'voice-chip' + (i === 0 ? ' selected' : '');
+        chip.textContent = v.name.replace(/^.*?(?=\()/, '').replace(/[()]/g,'').trim() || v.name;
+        chip.title = v.name;
+        chip.addEventListener('click', () => {
+          voiceSelect.value = i;
+          document.querySelectorAll('.voice-chip').forEach(c => c.classList.remove('selected'));
+          chip.classList.add('selected');
+        });
+        chipsContainer.appendChild(chip);
+      });
+    } else {
+      chipsSection.style.display = 'none';
+    }
+  }
+
+  langSelect.addEventListener('change', onLangChange);
+  voiceSelect.addEventListener('change', () => {
+    const chips = document.querySelectorAll('.voice-chip');
+    chips.forEach((c, i) => c.classList.toggle('selected', i === parseInt(voiceSelect.value)));
+  });
+
+  speechSynthesis.onvoiceschanged = loadVoices;
+  loadVoices();
+  setTimeout(loadVoices, 500);
+
+  // --- Speech ---
+  function splitIntoChunks(text) {
+    // Split by sentences, then group into word-count chunks
+    const sentences = text.match(/[^.!?]+[.!?]*/g) || [text];
+    const result = [];
+    let current = '';
+    let wordCount = 0;
+
+    sentences.forEach(sentence => {
+      const words = sentence.trim().split(/\s+/).length;
+      if (wordCount + words > CHUNK_SIZE && current) {
+        result.push(current.trim());
+        current = sentence;
+        wordCount = words;
+      } else {
+        current += ' ' + sentence;
+        wordCount += words;
+      }
+    });
+    if (current.trim()) result.push(current.trim());
+    return result.filter(c => c.length > 0);
+  }
+
+  function getSelectedVoice() {
+    const lang = langSelect.value;
+    const idx = parseInt(voiceSelect.value);
+    if (lang && allVoices[lang] && !isNaN(idx)) return allVoices[lang][idx];
+    return null;
+  }
+
+  function speakChunk(index) {
+    if (index >= chunks.length) {
+      onSpeechEnd();
+      return;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(chunks[index]);
+    const voice = getSelectedVoice();
+    if (voice) utterance.voice = voice;
+    if (langSelect.value) utterance.lang = langSelect.value;
+    utterance.rate = parseFloat(rateSlider.value);
+    utterance.pitch = parseFloat(pitchSlider.value);
+    utterance.volume = parseFloat(volSlider.value);
+
+    utterance.onstart = () => {
+      chunkIndex = index;
+      updateProgress();
+    };
+
+    utterance.onend = () => {
+      if (isSpeaking && !isPaused) speakChunk(index + 1);
+    };
+
+    utterance.onerror = (e) => {
+      if (e.error === 'interrupted' || e.error === 'canceled') return;
+      setStatus(`Error: ${e.error}`, 'error');
+      onSpeechEnd();
+    };
+
+    speechSynthesis.speak(utterance);
+  }
+
+  function toggleSpeak() {
+    if (isSpeaking) {
+      stopSpeech();
+    } else {
+      startSpeech();
+    }
+  }
+
+  function startSpeech() {
+    const text = textInput.value.trim();
+    if (!text) {
+      setStatus('Please enter some text first!', 'error');
+      return;
+    }
+    speechSynthesis.cancel();
+    chunks = splitIntoChunks(text);
+    chunkIndex = 0;
+    isSpeaking = true;
+    isPaused = false;
+
+    setPlaying(true);
+    setStatus(`Speaking... (chunk 1 of ${chunks.length})`, 'speaking');
+    speakChunk(0);
+  }
+
+  function stopSpeech() {
+    isSpeaking = false;
+    isPaused = false;
+    speechSynthesis.cancel();
+    onSpeechEnd();
+  }
+
+  function togglePause() {
+    if (!isSpeaking) return;
+    if (isPaused) {
+      isPaused = false;
+      speechSynthesis.resume();
+      pauseBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" fill="currentColor"/><rect x="14" y="4" width="4" height="16" fill="currentColor"/></svg> Pause';
+      setStatus(`Speaking... (chunk ${chunkIndex + 1} of ${chunks.length})`, 'speaking');
+      visualizer.classList.add('active');
+    } else {
+      isPaused = true;
+      speechSynthesis.pause();
+      pauseBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21" fill="currentColor"/></svg> Resume';
+      setStatus('Paused', '');
+      visualizer.classList.remove('active');
+    }
+  }
+
+  function onSpeechEnd() {
+    isSpeaking = false;
+    isPaused = false;
+    setPlaying(false);
+    setStatus('Ready to speak', '');
+    progressBar.style.width = '0%';
+    progressWrap.classList.remove('visible');
+  }
+
+  function setPlaying(playing) {
+    if (playing) {
+      speakBtn.classList.add('speaking');
+      speakLabel.textContent = 'STOP';
+      speakIcon.innerHTML = '<rect x="4" y="4" width="16" height="16" rx="2" fill="currentColor"/>';
+      pauseBtn.disabled = false;
+      progressWrap.classList.add('visible');
+      visualizer.classList.add('active');
+    } else {
+      speakBtn.classList.remove('speaking');
+      speakLabel.textContent = 'SPEAK';
+      speakIcon.innerHTML = '<polygon points="5,3 19,12 5,21" fill="currentColor"/>';
+      pauseBtn.disabled = true;
+      pauseBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" fill="currentColor"/><rect x="14" y="4" width="4" height="16" fill="currentColor"/></svg> Pause';
+      visualizer.classList.remove('active');
+    }
+  }
+
+  function updateProgress() {
+    const pct = chunks.length > 1 ? (chunkIndex / chunks.length) * 100 : 50;
+    progressBar.style.width = pct + '%';
+    setStatus(`Speaking... (segment ${chunkIndex + 1} of ${chunks.length})`, 'speaking');
+  }
+
+  function setStatus(msg, type) {
+    statusText.textContent = msg;
+    statusEl.className = 'status' + (type ? ' ' + type : '');
+    if (type !== 'speaking') visualizer.classList.remove('active');
+  }
+
+  // Keep speech alive on Chrome (Chrome pauses after ~15s)
+  setInterval(() => {
+    if (isSpeaking && !isPaused && speechSynthesis.speaking) {
+      // Chrome bugfix: resume if it stopped unexpectedly
+    }
+  }, 10000);
+</script>
+</body>
+</html>
